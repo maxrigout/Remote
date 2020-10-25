@@ -858,7 +858,7 @@ void MainWindow::UpdateGuiControls()
 			ShowWindow(m_btnDisconnect.Window(), SW_HIDE);
 
 			Data.sLabels[0] = "IP Address: ";
-			Data.sLabels[1] = "NB Connected: ";
+			Data.sLabels[1] = "Clients Connected: ";
 
 			SetRect(&Data.textRect, 20, 120, 129, 170);
 			InvalidateRect(m_hwnd, &Data.textRect, true);
@@ -1170,7 +1170,7 @@ int MainWindow::SendThread()
 					if (bytes == 0)
 					{
 						// client disconnected
-						Log("Client nb " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
+						Log("Client number " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
 						Server.nConnected--;
 						closesocket(client.socket);
 						client.socket = INVALID_SOCKET;
