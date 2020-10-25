@@ -205,7 +205,7 @@ int ConnectServer(SOCKET& sktConn, std::string serverAdd, int port) {
 
 int ReceiveServer(SOCKET sktConn, INPUT& data) {
 	INPUT* buff = new INPUT;
-	//std::cout << "receiving..." << std::endl;
+	//std::cout << "Receiving..." << std::endl;
 	int iResult = recv(sktConn, (char*)buff, sizeof(INPUT), 0);
 	if (iResult == sizeof(INPUT)) 
 	{
@@ -228,7 +228,7 @@ int ReceiveServer(SOCKET sktConn, INPUT& data) {
 		}
 	}
 	else {
-		std::cout << "recv failed with error: " << WSAGetLastError() << std::endl;
+		std::cout << "Receive failed with error: " << WSAGetLastError() << std::endl;
 		delete buff;
 		return 1;
 	}
@@ -813,7 +813,7 @@ void MainWindow::UpdateGuiControls()
 			ShowWindow(m_btnConnect.Window(), SW_SHOW);
 			ShowWindow(m_btnDisconnect.Window(), SW_SHOW);
 
-			Data.sLabels[0] = "Server Adress: ";
+			Data.sLabels[0] = "Server Address: ";
 			Data.sLabels[1] = "Connected: ";
 
 			SetRect(&Data.textRect, 20, 120, 129, 170);
@@ -857,7 +857,7 @@ void MainWindow::UpdateGuiControls()
 			ShowWindow(m_btnConnect.Window(), SW_HIDE);
 			ShowWindow(m_btnDisconnect.Window(), SW_HIDE);
 
-			Data.sLabels[0] = "IP Adress: ";
+			Data.sLabels[0] = "IP Address: ";
 			Data.sLabels[1] = "NB Connected: ";
 
 			SetRect(&Data.textRect, 20, 120, 129, 170);
@@ -1203,7 +1203,7 @@ int MainWindow::ReceiveThread()
 		else
 		{
 			Client.isConnected = false;
-			Log("No input to receive, diconnecting");
+			Log("No input received, disconnecting");
 			PostMessage(m_hwnd, WM_COMMAND, MAKEWPARAM(BTN_DISCONNECT, BN_CLICKED), 0);
 		}
 	}
