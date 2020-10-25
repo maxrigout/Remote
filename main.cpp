@@ -1,4 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #undef UNICODE
 
 #include <iostream>
@@ -7,6 +8,8 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <fstream>
+#include <sstream>
 
 #include <Windows.h>
 #include <windowsx.h>
@@ -22,9 +25,10 @@
 #define BTN_TERMINATE 4
 #define BTN_CONNECT 5
 #define BTN_DISCONNECT 6
-#define EDIT_ADRESS 7
+#define EDIT_ADDRESS 7
 #define BTN_SERVER 8
 #define BTN_CLIENT 9
+#define EDIT_PORT 10
 
 #define MENU_FILE 10
 #define MENU_SUB 11
@@ -33,8 +37,6 @@
 
 #define DEFAULT_PORT 27015
 #define MAX_CLIENTS 1
-
-const int iport = DEFAULT_PORT;
 
 // Server screen dim is nScreenWidth[0], nScreenHeight[0]
 // Client screen dim is nScreenWidth[1], nScreenHeight[1]
@@ -55,18 +57,6 @@ const int nNormalized = 65535;
 // https://docs.microsoft.com/en-us/windows/win32/winsock/complete-server-code
 // https://docs.microsoft.com/en-us/windows/win32/winsock/complete-client-code
 int InitializeServer(SOCKET& sktListen, int port) {
-	WSADATA wsadata;
-	int iResult;
-
-	//Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsadata);
-
-
-	if (iResult != 0) {
-		std::cout << "WSAStartup failed : " << iResult << std::endl;;
-		return 1;
-	}
-
 	struct addrinfo* result = NULL;
 	struct addrinfo hints;
 
@@ -79,8 +69,7 @@ int InitializeServer(SOCKET& sktListen, int port) {
 	hints.ai_flags = AI_PASSIVE;
 
 	//Resolve the local address and port to be used by the server
-	iResult = getaddrinfo(NULL, std::to_string(port).c_str(), &hints, &result);
-
+	int iResult = getaddrinfo(NULL, std::to_string(port).c_str(), &hints, &result);
 
 	if (iResult != 0) {
 		std::cout << "getaddrinfo failed: " << iResult << std::endl;
@@ -148,15 +137,15 @@ int TerminateServer(SOCKET& sktListen, std::vector<SOCKET>& sktClients) {
 }
 
 int InitializeClient() {
-	WSADATA wsaData;
-	int iResult;
+	//WSADATA wsaData;
+	//int iResult;
 
-	// Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0) {
-		std::cout << "WSAStartup failed with error: " << iResult << std::endl;
-		return 1;
-	}
+	//// Initialize Winsock
+	//iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	//if (iResult != 0) {
+	//	std::cout << "WSAStartup failed with error: " << iResult << std::endl;
+	//	return 1;
+	//}
 	return 0;
 }
 
@@ -297,6 +286,8 @@ public:
 			wc.lpfnWndProc = BaseWindow::WindowProc;
 			wc.hInstance = GetModuleHandle(NULL);
 			wc.lpszClassName = ClassName();
+			wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+			wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 
 			RegisterClass(&wc);
 		}
@@ -321,44 +312,42 @@ protected:
 	HWND m_hwnd;
 	BaseWindow* m_pParent;
 };
-
 class Button : public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "button"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
-
 class InputBox : public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "edit"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
-
 class StaticBox : public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "static"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
-
 class EditBox : public BaseWindow
 {
 public:
 	LPCSTR ClassName() const { return "static"; }
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
-
 class MainWindow : public BaseWindow
 {
 public:
+	MainWindow();
+	~MainWindow();
+
     LPCSTR ClassName() const { return "Remote Window Class"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 public:
 
-	enum MODE
+	enum class MODE
 	{
 		SERVER,
 		CLIENT,
@@ -372,7 +361,7 @@ public:
 	int SetMode(MODE m);
 	void UpdateGuiControls();
 
-	int ServerStart(int nPort = DEFAULT_PORT);
+	int ServerStart();
 	int ServerTerminate();
 
 	int ClientConnect();
@@ -388,11 +377,19 @@ public:
 	int ListenThread();
 	int ReceiveThread();
 
+	bool SaveConfig();
+	bool ServerLoadConfig();
+	bool ClientLoadConfig();
+
 	void Log(std::string msg);
 	void ServerLog(std::string msg);
 	void ClientLog(std::string msg);
 
 private:
+
+	std::string configName = "config.txt";
+	std::string sPort = std::to_string(DEFAULT_PORT);
+
 
 	struct WindowData
 	{
@@ -408,12 +405,15 @@ private:
 
 	struct ServerData
 	{
+		std::string ip;
+
 		INPUT inputBuff;
 		int nConnected = 0;
 		bool isOnline = false;
 		bool bAccepting = false;
 		bool clientConnected = false;
 		bool wasServer = false;
+		std::string port;
 
 		bool isRegistered = false;
 		RAWINPUTDEVICE rid[3]; // index #2 not used
@@ -450,7 +450,7 @@ private:
 
 	struct ClientData
 	{
-		std::string ip = "192.168.1.8";
+		std::string ip;
 		INPUT recvBuff;
 		bool isConnected = false;
 		bool wasClient = false;
@@ -474,10 +474,34 @@ private:
 	Button m_btnModeClient, m_btnConnect, m_btnDisconnect;
 	Button m_btnModeServer, m_btnStart, m_btnTerminate;
 	InputBox m_itxtIP;
-	StaticBox m_stxtNbConnected;
+	InputBox m_itxtPort;
 	StaticBox m_stxtKeyboard, m_stxtMouse, m_stxtMouseBtn, m_stxtMouseOffset;
 };
 
+MainWindow::MainWindow()
+{
+	ClientLoadConfig();
+	WSADATA wsadata;
+	int r = WSAStartup(MAKEWORD(2, 2), &wsadata);
+
+	if (r != 0)
+	{
+		std::cout << "WSAStartup failed: " << r << std::endl;
+	}
+	else
+	{
+		hostent* host;
+		host = gethostbyname("");
+		char* wifiIP;
+		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[0]);
+		Server.ip = std::string(wifiIP);
+	}
+}
+MainWindow::~MainWindow()
+{
+	SaveConfig();
+	WSACleanup();
+}
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -602,7 +626,7 @@ int MainWindow::HandleCommand(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam)) {
 
 		case BTN_START:
-			return ServerStart(iport);
+			return ServerStart();
 
 		case BTN_PAUSE:
 			Server.bPause = !Server.bPause;
@@ -619,7 +643,7 @@ int MainWindow::HandleCommand(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case BTN_DISCONNECT:
 			return ClientDisconnect();
 
-		case EDIT_ADRESS:
+		case EDIT_ADDRESS:
 
 			break;
 
@@ -671,14 +695,16 @@ int MainWindow::HandleCreate(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	//hLog = CreateWindowEx(0, "edit", txtLog.c_str(), WS_VISIBLE | WS_CHILD | ES_READONLY | ES_MULTILINE, 250, 10, 200, 260, m_hwnd, NULL, (HINSTANCE)GetWindowLong(m_hwnd, GWL_HINSTANCE), NULL);
 
-	m_itxtIP.Create(this, Client.ip.c_str(), WS_VISIBLE | WS_CHILD | ES_READONLY, 0, 130, 120, 100, 20, m_hwnd, (HMENU)EDIT_ADRESS);
-	m_stxtNbConnected.Create(this, std::to_string(Server.nConnected).c_str(), WS_VISIBLE | WS_CHILD, 0, 130, 150, 100, 20, m_hwnd, NULL);
+	m_itxtIP.Create(this, Client.ip.c_str(), WS_VISIBLE | WS_CHILD | ES_READONLY, 0, 130, 120, 100, 20, m_hwnd, (HMENU)EDIT_ADDRESS);
+	m_itxtPort.Create(this, sPort.c_str(), WS_VISIBLE | WS_CHILD | ES_READONLY, 0, 130, 150, 100, 20, m_hwnd, (HMENU)EDIT_PORT);
 
 	m_stxtKeyboard.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 180, 100, 20, m_hwnd, NULL);
 	m_stxtMouse.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 210, 100, 20, m_hwnd, NULL);
 	m_stxtMouseOffset.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 230, 100, 20, m_hwnd, NULL);
 	m_stxtMouseBtn.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 250, 100, 20, m_hwnd, NULL);
 
+	PostMessage(m_itxtPort.Window(), EM_SETREADONLY, (WPARAM)false, 0);
+	Data.sLabels[1] = "Port: ";
 	return 0;
 }
 int MainWindow::HandlePaint(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -696,7 +722,8 @@ int MainWindow::HandlePaint(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	GetClientRect(m_hwnd, &clientRect);
 
 	hBrush = CreateSolidBrush(RGB(255, 255, 255));
-	FillRect(hdc, &clientRect, hBrush);
+	//FillRect(hdc, &clientRect, hBrush);
+	FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
 
 	TextOut(hdc, 20, 120, Data.sLabels[0].c_str(), Data.sLabels[0].length());
 	TextOut(hdc, 20, 150, Data.sLabels[1].c_str(), Data.sLabels[1].length());
@@ -709,10 +736,31 @@ int MainWindow::HandlePaint(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 int MainWindow::HandleClose(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if (MessageBox(m_hwnd, "Really quit?", "Remote", MB_OKCANCEL) == IDOK) {
-		Data.nMode = MODE::UNDEF;
-		DestroyWindow(m_hwnd);
+	//if (MessageBox(m_hwnd, "Really quit?", "Remote", MB_OKCANCEL) == IDOK) {
+	//	Data.nMode = MODE::UNDEF;
+	//	DestroyWindow(m_hwnd);
+	//}
+	switch (Data.nMode)
+	{
+	case MODE::SERVER:
+		if (Server.isOnline)
+		{
+			ServerTerminate();
+		}
+		break;
+
+	case MODE::CLIENT:
+		if (Client.isConnected)
+		{
+			ClientDisconnect();
+		}
+		break;
+
+	default:
+		break;
 	}
+
+	DestroyWindow(m_hwnd);
 	return 0;
 }
 
@@ -733,6 +781,7 @@ void MainWindow::ClientLog(std::string msg)
 {
 	std::cout << "Client - " << msg << std::endl;
 }
+
 
 int MainWindow::InitializeInputDevice() {
 
@@ -813,16 +862,18 @@ void MainWindow::UpdateGuiControls()
 			ShowWindow(m_btnConnect.Window(), SW_SHOW);
 			ShowWindow(m_btnDisconnect.Window(), SW_SHOW);
 
-			Data.sLabels[0] = "Server Adress: ";
-			Data.sLabels[1] = "Connected: ";
+			Data.sLabels[0] = "Server Address: ";
+			//Data.sLabels[1] = "Connected: ";
 
 			SetRect(&Data.textRect, 20, 120, 129, 170);
 			InvalidateRect(m_hwnd, &Data.textRect, true);
 
 			PostMessage(m_itxtIP.Window(), EM_SETREADONLY, (WPARAM)false, 0);
-
+			SetWindowText(m_itxtIP.Window(), Client.ip.c_str());
 			//SetWindowLong(hTxtIP, GWL_STYLE, GetWindowLong(hTxtIP, GWL_STYLE) ^ ES_READONLY);
 			//UpdateWindow(hTxtIP);
+			Client.wasClient = true;
+			Server.wasServer = false;
 			UpdateWindow(m_hwnd);
 		}
 		else if (Client.isConnected)
@@ -832,13 +883,13 @@ void MainWindow::UpdateGuiControls()
 			Button_Enable(m_btnModeServer.Window(), false);
 			Button_Enable(m_btnModeClient.Window(), false);
 		}
-		else if (!Client.isConnected)
-		{
-			Button_Enable(m_btnConnect.Window(), true);
-			Button_Enable(m_btnDisconnect.Window(), false);
-			Button_Enable(m_btnModeServer.Window(), true);
-			Button_Enable(m_btnModeClient.Window(), true);
-		}
+		//else if (!Client.isConnected)
+		//{
+		//	Button_Enable(m_btnConnect.Window(), true);
+		//	Button_Enable(m_btnDisconnect.Window(), false);
+		//	Button_Enable(m_btnModeServer.Window(), true);
+		//	Button_Enable(m_btnModeClient.Window(), true);
+		//}
 	}
 		break;
 
@@ -857,17 +908,19 @@ void MainWindow::UpdateGuiControls()
 			ShowWindow(m_btnConnect.Window(), SW_HIDE);
 			ShowWindow(m_btnDisconnect.Window(), SW_HIDE);
 
-			Data.sLabels[0] = "IP Adress: ";
-			Data.sLabels[1] = "NB Connected: ";
+			Data.sLabels[0] = "IP Address: ";
+			//Data.sLabels[1] = "NB Connected: ";
 
 			SetRect(&Data.textRect, 20, 120, 129, 170);
 			InvalidateRect(m_hwnd, &Data.textRect, true);
 
 			PostMessage(m_itxtIP.Window(), EM_SETREADONLY, (WPARAM)true, 0);
-			SetWindowText(m_itxtIP.Window(), Client.ip.c_str());
+			SetWindowText(m_itxtIP.Window(), Server.ip.c_str());
 
 			//SetWindowLong(hTxtIP, GWL_STYLE, GetWindowLong(hTxtIP, GWL_STYLE) ^ ES_READONLY);
 			//UpdateWindow(hTxtIP);
+			Client.wasClient = false;
+			Server.wasServer = true;
 			UpdateWindow(m_hwnd);
 		}
 		else if (Server.isOnline)
@@ -878,14 +931,14 @@ void MainWindow::UpdateGuiControls()
 			Button_Enable(m_btnModeServer.Window(), false);
 			Button_Enable(m_btnModeClient.Window(), false);
 		}
-		else if (!Server.isOnline)
-		{
-			Button_Enable(m_btnStart.Window(), false);
-			Button_Enable(m_btnTerminate.Window(), true);
-			Button_Enable(m_btnPause.Window(), true);
-			Button_Enable(m_btnModeServer.Window(), false);
-			Button_Enable(m_btnModeClient.Window(), false);
-		}
+		//else if (!Server.isOnline)
+		//{
+		//	Button_Enable(m_btnStart.Window(), false);
+		//	Button_Enable(m_btnTerminate.Window(), true);
+		//	Button_Enable(m_btnPause.Window(), true);
+		//	Button_Enable(m_btnModeServer.Window(), false);
+		//	Button_Enable(m_btnModeClient.Window(), false);
+		//}
 	}
 	break;
 
@@ -990,8 +1043,11 @@ int MainWindow::SetMode(MODE m)
 	return 0;
 }
 
-int MainWindow::ServerStart(int nPort)
+int MainWindow::ServerStart()
 {
+	char out_port[50];
+	GetWindowText(m_itxtPort.Window(), out_port, 50);
+	sPort = out_port;
 	if (!Server.isRegistered)
 	{
 		InitializeInputDevice();
@@ -999,7 +1055,7 @@ int MainWindow::ServerStart(int nPort)
 		Server.isRegistered = true;
 	}
 	Log("Initializing");
-	int error = InitializeServer(Server.sktListen, nPort);
+	int error = InitializeServer(Server.sktListen, std::stoi(sPort));
 	if (error == 1) {
 		Log("Could not initialize server");
 		if (MessageBox(m_hwnd, "Could not initialize server", "Remote - Error", MB_ABORTRETRYIGNORE | MB_DEFBUTTON1 | MB_ICONERROR) == IDRETRY) {
@@ -1048,30 +1104,38 @@ int MainWindow::ServerTerminate()
 		Server.isOnline = false;
 		Server.cond_listen.notify_all();
 		Server.cond_input.notify_all();
-		UpdateGuiControls();
+		
+		//UpdateGuiControls();
+		Button_Enable(m_btnStart.Window(), true);
+		Button_Enable(m_btnTerminate.Window(), false);
+		Button_Enable(m_btnPause.Window(), false);
+		Button_Enable(m_btnModeServer.Window(), true);
+		Button_Enable(m_btnModeClient.Window(), true);
+		
 		return 0;
 	}
-
 	return 1;
 }
 
 int MainWindow::ClientConnect()
 {
-	char out[50];
+	char out_ip[50];
+	char out_port[50];
 	int error = 1;
-	GetWindowText(m_itxtIP.Window(), out, 50);
-	Client.ip = out;
-	//MessageBox(m_hwnd, Client.ip.c_str(), "Remote - Connect", MB_OK);
-	Log("Initializing client ");
-	InitializeClient();
-	Log("Connecting to server: " + Client.ip + ":" + std::to_string(iport));
-	error = ConnectServer(Client.sktServer, Client.ip, iport);
+	GetWindowText(m_itxtIP.Window(), out_ip, 50);
+	GetWindowText(m_itxtPort.Window(), out_port, 50);
+	Client.ip = out_ip;
+	sPort = out_port;
+	//Log("Initializing client ");
+	//InitializeClient();
+	Log("Connecting to server: " + Client.ip + ":" + sPort);
+	error = ConnectServer(Client.sktServer, Client.ip, std::stoi(sPort));
 	if (error == 1) {
 		Log("Couldn't connect");
 		//MessageBox(NULL, "couldn't connect", "Remote", MB_OK);
 	}
 	else {
-		Log("Connected! " + std::to_string(iport));
+		Log("Connected!");
 		Client.isConnected = true;
 		UpdateGuiControls();
 
@@ -1098,7 +1162,13 @@ int MainWindow::ClientDisconnect()
 	Client.isConnected = false;
 	Client.cond_input.notify_all();
 	Client.cond_recv.notify_all();
-	UpdateGuiControls();
+	
+	//UpdateGuiControls();
+	Button_Enable(m_btnConnect.Window(), true);
+	Button_Enable(m_btnDisconnect.Window(), false);
+	Button_Enable(m_btnModeServer.Window(), true);
+	Button_Enable(m_btnModeClient.Window(), true);
+
 	return 0;
 }
 
@@ -1170,7 +1240,7 @@ int MainWindow::SendThread()
 					if (bytes == 0)
 					{
 						// client disconnected
-						Log("Client nb " + std::to_string(client.id) + " disconnected : " + std::to_string(client.socket) + "\nIP: " + client.ip);
+						Log("Client nb " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
 						Server.nConnected--;
 						closesocket(client.socket);
 						client.socket = INVALID_SOCKET;
@@ -1236,6 +1306,64 @@ int MainWindow::OutputThread()
 	}
 	Log("Receive thread - ended");
 	return 0;
+}
+
+
+bool MainWindow::SaveConfig()
+{
+	std::fstream f(configName, std::fstream::out | std::fstream::trunc);
+	if (!f.is_open())
+	{
+		std::cout << "can't save" << std::endl;
+		return false;
+	}
+	f << "port " << sPort << std::endl;
+	f << "server_ip " << Client.ip;
+	f.close();
+	return true;
+}
+bool MainWindow::ServerLoadConfig()
+{
+	std::fstream f(configName, std::fstream::in);
+	if (!f.is_open())
+	{
+		return false;
+	}
+
+	std::string line;
+	std::string junk;
+	std::stringstream s;
+	std::getline(f, line);
+	s << line;
+	s >> junk >> sPort;
+	f.close();
+
+	return true;
+}
+bool MainWindow::ClientLoadConfig()
+{
+	std::fstream f(configName, std::fstream::in);
+	if (!f.is_open())
+	{
+		return false;
+	}
+
+	std::string line;
+	std::string junk;
+	std::stringstream s;
+
+	std::getline(f, line);
+	s << line;
+	s >> junk >> sPort;
+	s.clear();
+
+	std::getline(f, line);
+	s << line;
+	s >> junk >> Client.ip;
+
+	f.close();
+
+	return true;
 }
 
 int main()
