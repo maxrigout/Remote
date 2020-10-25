@@ -40,8 +40,8 @@
 
 // Server screen dim is nScreenWidth[0], nScreenHeight[0]
 // Client screen dim is nScreenWidth[1], nScreenHeight[1]
-const int nScreenWidth[2] = { 1920 , 2560};
-const int nScreenHeight[2] = { 1080 , 1440};
+int nScreenWidth[2] = { 1920 , 2560};
+int nScreenHeight[2] = { 1080 , 1440};
 
 
 const int nNormalized = 65535;
@@ -496,6 +496,8 @@ MainWindow::MainWindow()
 		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[0]);
 		Server.ip = std::string(wifiIP);
 	}
+	nScreenWidth[0] = GetSystemMetrics(SM_CXSCREEN);
+	nScreenHeight[0] = GetSystemMetrics(SM_CYSCREEN);
 }
 MainWindow::~MainWindow()
 {
@@ -1048,6 +1050,7 @@ int MainWindow::ServerStart()
 	char out_port[50];
 	GetWindowText(m_itxtPort.Window(), out_port, 50);
 	sPort = out_port;
+	SaveConfig();
 	if (!Server.isRegistered)
 	{
 		InitializeInputDevice();
@@ -1126,6 +1129,7 @@ int MainWindow::ClientConnect()
 	GetWindowText(m_itxtPort.Window(), out_port, 50);
 	Client.ip = out_ip;
 	sPort = out_port;
+	SaveConfig();
 	//Log("Initializing client ");
 	//InitializeClient();
 	Log("Connecting to server: " + Client.ip + ":" + sPort);
