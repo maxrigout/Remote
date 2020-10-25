@@ -63,7 +63,7 @@ int InitializeServer(SOCKET& sktListen, int port) {
 
 
 	if (iResult != 0) {
-		std::cout << "WSAStartup failed : " << iResult << std::endl;;
+		std::cout << "WSAStartup failed: " << iResult << std::endl;;
 		return 1;
 	}
 
@@ -606,8 +606,8 @@ int MainWindow::HandleCommand(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case BTN_PAUSE:
 			Server.bPause = !Server.bPause;
-			Log(((!Server.bPause) ? "Resumed" : "Paused"));
-			SetWindowText(m_btnPause.Window(), (Server.bPause) ? "Resume" : "Pause");
+			Log(((!Server.bPause) ? "Resumed": "Paused"));
+			SetWindowText(m_btnPause.Window(), (Server.bPause) ? "Resume": "Pause");
 			return 0;
 
 		case BTN_TERMINATE:
@@ -1170,7 +1170,7 @@ int MainWindow::SendThread()
 					if (bytes == 0)
 					{
 						// client disconnected
-						Log("Client nb " + std::to_string(client.id) + " disconnected : " + std::to_string(client.socket) + "\nIP: " + client.ip);
+						Log("Client nb " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
 						Server.nConnected--;
 						closesocket(client.socket);
 						client.socket = INVALID_SOCKET;
