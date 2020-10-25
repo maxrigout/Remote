@@ -118,7 +118,7 @@ int InitializeServer(SOCKET& sktListen, int port) {
 int BroadcastInput(std::vector<SOCKET> vsktSend, INPUT* input) {
 	int iResult = 0;
 
-	for (auto& sktSend : vsktSend) {
+	for (auto& sktSend: vsktSend) {
 		if (sktSend != INVALID_SOCKET) {
 
 			iResult = send(sktSend, (char*)input, sizeof(INPUT), 0);
@@ -133,7 +133,7 @@ int BroadcastInput(std::vector<SOCKET> vsktSend, INPUT* input) {
 int TerminateServer(SOCKET& sktListen, std::vector<SOCKET>& sktClients) {
 
 	int iResult;
-	for (auto& client : sktClients) {
+	for (auto& client: sktClients) {
 		if (client != INVALID_SOCKET) {
 			iResult = shutdown(client, SD_SEND);
 			if (iResult == SOCKET_ERROR) {
@@ -276,7 +276,7 @@ public:
 		}
 	}
 
-	BaseWindow() : m_hwnd(NULL), m_pParent(nullptr) { }
+	BaseWindow(): m_hwnd(NULL), m_pParent(nullptr) { }
 
 	BOOL Create(
 		BaseWindow* parent,
@@ -308,7 +308,7 @@ public:
 			nWidth, nHeight, hWndParent, hMenu, GetModuleHandle(NULL), this
 		);
 
-		return (m_hwnd ? TRUE : FALSE);
+		return (m_hwnd ? TRUE: FALSE);
 	}
 
 	HWND Window() const { return m_hwnd; }
@@ -322,35 +322,35 @@ protected:
 	BaseWindow* m_pParent;
 };
 
-class Button : public BaseWindow
+class Button: public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "button"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 
-class InputBox : public BaseWindow
+class InputBox: public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "edit"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 
-class StaticBox : public BaseWindow
+class StaticBox: public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "static"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 
-class EditBox : public BaseWindow
+class EditBox: public BaseWindow
 {
 public:
 	LPCSTR ClassName() const { return "static"; }
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 
-class MainWindow : public BaseWindow
+class MainWindow: public BaseWindow
 {
 public:
     LPCSTR ClassName() const { return "Remote Window Class"; }
@@ -1010,7 +1010,7 @@ int MainWindow::ServerStart(int nPort)
 	else {
 		Log("Server initialized");
 		Server.ClientsInformation.resize(MAX_CLIENTS);
-		for (auto& c : Server.ClientsInformation)
+		for (auto& c: Server.ClientsInformation)
 		{
 			c.socket = INVALID_SOCKET;
 			c.ip = "";
@@ -1040,7 +1040,7 @@ int MainWindow::ServerTerminate()
 		Log("Terminate");
 		//MessageBox(m_hwnd, "Terminate", "Remote", MB_OK);
 		std::vector<SOCKET> skt_clients;
-		for (auto& skt : Server.ClientsInformation)
+		for (auto& skt: Server.ClientsInformation)
 		{
 			skt_clients.push_back(skt.socket);
 		}
@@ -1159,7 +1159,7 @@ int MainWindow::SendThread()
 		{
 			INPUT inputData = Server.inputQueue.front();
 			int bytes = 0;
-			for (auto& client : Server.ClientsInformation)
+			for (auto& client: Server.ClientsInformation)
 			{
 				//std::cout << "Searching for client" << std::endl;
 				if (client.socket != INVALID_SOCKET)
