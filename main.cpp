@@ -493,7 +493,9 @@ MainWindow::MainWindow()
 		hostent* host;
 		host = gethostbyname("");
 		char* wifiIP;
-		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[1]);
+		// the index in the array is to be changed based on the adapter.
+		// I currently have no way to determine which is the correct adapter.
+		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[0]); 
 		Server.ip = std::string(wifiIP);
 	}
 	nScreenWidth[0] = GetSystemMetrics(SM_CXSCREEN);
