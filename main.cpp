@@ -1244,7 +1244,7 @@ int MainWindow::SendThread()
 					if (bytes == 0)
 					{
 						// client disconnected
-						Log("Client nb " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
+						Log("Client " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
 						Server.nConnected--;
 						closesocket(client.socket);
 						client.socket = INVALID_SOCKET;
