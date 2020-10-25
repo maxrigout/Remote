@@ -36,13 +36,12 @@
 #define MENU_ABOUT 13
 
 #define DEFAULT_PORT 27015
-#define MAX_CLIENTS 1
+#define MAX_CLIENTS 10
 
 // Server screen dim is nScreenWidth[0], nScreenHeight[0]
 // Client screen dim is nScreenWidth[1], nScreenHeight[1]
 int nScreenWidth[2] = { 1920 , 2560 };
 int nScreenHeight[2] = { 1080 , 1440 };
-
 
 const int nNormalized = 65535;
 
@@ -371,8 +370,7 @@ public:
 	int ReceiveThread();
 
 	bool SaveConfig();
-	bool ServerLoadConfig();
-	bool ClientLoadConfig();
+	bool LoadConfig();
 
 	void Log(std::string msg);
 	void ServerLog(std::string msg);
@@ -381,8 +379,8 @@ public:
 private:
 
 	std::string configName = "config.txt";
-	std::string sPort = std::to_string(DEFAULT_PORT);
-
+	std::string sPort;
+	int iPort;
 
 	struct WindowData
 	{
@@ -399,7 +397,7 @@ private:
 	struct ServerData
 	{
 		std::string ip;
-
+		int maxClients;
 		INPUT inputBuff;
 		int nConnected = 0;
 		bool isOnline = false;
@@ -473,7 +471,7 @@ private:
 
 MainWindow::MainWindow()
 {
-	ClientLoadConfig();
+	LoadConfig();
 	WSADATA wsadata;
 	int r = WSAStartup(MAKEWORD(2, 2), &wsadata);
 
@@ -1379,7 +1377,7 @@ int MainWindow::ListenThread()
 	while (Server.isOnline && Data.nMode == MODE::SERVER)
 	{
 		std::unique_lock<std::mutex> lock(Server.mu_sktclient);
-		if (Server.nConnected >= MAX_CLIENTS)
+		if (Server.nConnected >= Server.maxClients)
 		{
 			Server.cond_listen.wait(lock);
 		}
@@ -1522,12 +1520,16 @@ bool MainWindow::SaveConfig()
 		return false;
 	}
 	f << "port " << sPort << std::endl;
-	f << "server_ip " << Client.ip;
+	f << "server_ip " << Client.ip << std::endl;
+	f << "max_clients " << Server.maxClients;
 	f.close();
 	return true;
 }
-bool MainWindow::ServerLoadConfig()
+bool MainWindow::LoadConfig()
 {
+	sPort = std::to_string(DEFAULT_PORT);
+	iPort = std::stoi(sPort);
+	Server.maxClients = MAX_CLIENTS;
 	std::fstream f(configName, std::fstream::in);
 	if (!f.is_open())
 	{
@@ -1535,35 +1537,40 @@ bool MainWindow::ServerLoadConfig()
 	}
 
 	std::string line;
-	std::string junk;
+	std::string param;
 	std::stringstream s;
-	std::getline(f, line);
-	s << line;
-	s >> junk >> sPort;
-	f.close();
 
-	return true;
-}
-bool MainWindow::ClientLoadConfig()
-{
-	std::fstream f(configName, std::fstream::in);
-	if (!f.is_open())
+	if (!f.eof()) // read the port
 	{
-		return false;
+		std::getline(f, line);
+		s << line;
+		s >> param >> sPort;
+		
+		s.clear();
 	}
 
-	std::string line;
-	std::string junk;
-	std::stringstream s;
+	if (!f.eof()) // read the server ip
+	{
+		std::getline(f, line);
+		s << line;
+		s >> param >> Client.ip;
+		s.clear();
+	}
 
-	std::getline(f, line);
-	s << line;
-	s >> junk >> sPort;
-	s.clear();
+	if (!f.eof()) // read the max client number
+	{
+		std::getline(f, line);
+		s << line;
+		std::string max;
+		s >> param >> max;
+		Server.maxClients = std::stoi(max);
+		s.clear();
+	}
 
-	std::getline(f, line);
-	s << line;
-	s >> junk >> Client.ip;
+	std::cout << "Config Loaded:\n"
+			  << "    port = " << sPort << '\n'
+			  << "    server ip = " << Client.ip << '\n'
+			  << "    max number clients = " << Server.maxClients << std::endl;
 
 	f.close();
 
