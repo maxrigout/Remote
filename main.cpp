@@ -40,8 +40,8 @@
 
 // Server screen dim is nScreenWidth[0], nScreenHeight[0]
 // Client screen dim is nScreenWidth[1], nScreenHeight[1]
-int nScreenWidth[2] = { 1920 , 2560};
-int nScreenHeight[2] = { 1080 , 1440};
+int nScreenWidth[2] = { 1920 , 2560 };
+int nScreenHeight[2] = { 1080 , 1440 };
 
 
 const int nNormalized = 65535;
@@ -196,7 +196,7 @@ int ReceiveServer(SOCKET sktConn, INPUT& data) {
 	INPUT* buff = new INPUT;
 	//std::cout << "receiving..." << std::endl;
 	int iResult = recv(sktConn, (char*)buff, sizeof(INPUT), 0);
-	if (iResult == sizeof(INPUT)) 
+	if (iResult == sizeof(INPUT))
 	{
 		//std::cout << "Bytes received: " << iResult << std::endl;
 	}
@@ -211,7 +211,7 @@ int ReceiveServer(SOCKET sktConn, INPUT& data) {
 		int count = 0;
 		while (bytes_rec < sizeof(INPUT))
 		{
-			std::cout << "Received partial input: " << count << " - "<< bytes_rec << " bytes of " << sizeof(INPUT) << std::endl;
+			std::cout << "Received partial input: " << count << " - " << bytes_rec << " bytes of " << sizeof(INPUT) << std::endl;
 			bytes_rec += recv(sktConn, (char*)buff + bytes_rec, sizeof(INPUT) - bytes_rec, 0);
 			count++;
 		}
@@ -315,20 +315,20 @@ protected:
 class Button : public BaseWindow
 {
 public:
-    LPCSTR ClassName() const { return "button"; }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
+	LPCSTR ClassName() const { return "button"; }
+	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 class InputBox : public BaseWindow
 {
 public:
-    LPCSTR ClassName() const { return "edit"; }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
+	LPCSTR ClassName() const { return "edit"; }
+	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 class StaticBox : public BaseWindow
 {
 public:
-    LPCSTR ClassName() const { return "static"; }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
+	LPCSTR ClassName() const { return "static"; }
+	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(m_hwnd, uMsg, wParam, lParam); }
 };
 class EditBox : public BaseWindow
 {
@@ -342,8 +342,8 @@ public:
 	MainWindow();
 	~MainWindow();
 
-    LPCSTR ClassName() const { return "Remote Window Class"; }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LPCSTR ClassName() const { return "Remote Window Class"; }
+	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 public:
 
@@ -495,7 +495,8 @@ MainWindow::MainWindow()
 		char* wifiIP;
 		// the index in the array is to be changed based on the adapter.
 		// I currently have no way to determine which is the correct adapter.
-		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[0]); 
+		//inet_ntop(AF_INET, host->h_addr_list, wifiIP, 50);
+		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[0]);
 		Server.ip = std::string(wifiIP);
 	}
 	nScreenWidth[0] = GetSystemMetrics(SM_CXSCREEN);
@@ -509,10 +510,10 @@ MainWindow::~MainWindow()
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch (uMsg)
-    {
+	switch (uMsg)
+	{
 
-    case WM_CREATE:
+	case WM_CREATE:
 		return HandleCreate(uMsg, wParam, lParam);
 
 	case WM_INPUT:
@@ -528,14 +529,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CLOSE:
 		return HandleClose(uMsg, wParam, lParam);
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
 
-    default:
-        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
-    }
-    return TRUE;
+	default:
+		return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+	}
+	return TRUE;
 }
 int MainWindow::RetrieveInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -603,7 +604,7 @@ int MainWindow::RetrieveInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			//d.nOffsetY += Server.inputBuff.mi.dy;
 			GetCursorPos(&Server.mPos);
-			SetCursorPos(nScreenWidth[0]-10, Server.mPos.y);
+			SetCursorPos(nScreenWidth[0] - 10, Server.mPos.y);
 
 			if (Server.nOffsetX < 0)
 			{
@@ -702,10 +703,10 @@ int MainWindow::HandleCreate(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	m_itxtIP.Create(this, Client.ip.c_str(), WS_VISIBLE | WS_CHILD | ES_READONLY, 0, 130, 120, 100, 20, m_hwnd, (HMENU)EDIT_ADDRESS);
 	m_itxtPort.Create(this, sPort.c_str(), WS_VISIBLE | WS_CHILD | ES_READONLY, 0, 130, 150, 100, 20, m_hwnd, (HMENU)EDIT_PORT);
 
-	m_stxtKeyboard.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 180, 100, 20, m_hwnd, NULL);
-	m_stxtMouse.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 210, 100, 20, m_hwnd, NULL);
-	m_stxtMouseOffset.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 230, 100, 20, m_hwnd, NULL);
-	m_stxtMouseBtn.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 250, 100, 20, m_hwnd, NULL);
+	m_stxtKeyboard.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 180, 170, 20, m_hwnd, NULL);
+	m_stxtMouse.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 210, 170, 20, m_hwnd, NULL);
+	m_stxtMouseOffset.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 230, 170, 20, m_hwnd, NULL);
+	m_stxtMouseBtn.Create(this, "", WS_VISIBLE | WS_CHILD, 0, 130, 250, 170, 20, m_hwnd, NULL);
 
 	PostMessage(m_itxtPort.Window(), EM_SETREADONLY, (WPARAM)false, 0);
 	Data.sLabels[1] = "Port: ";
@@ -811,20 +812,202 @@ int MainWindow::InitializeInputDevice() {
 	return 0;
 }
 
-void MainWindow::UpdateInput() {
-	if (Server.inputBuff.type == INPUT_KEYBOARD) {
-		std::string out;
+std::string VKeyToString(unsigned int vk)
+{
+	//https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+	switch (vk)
+	{
+	case VK_BACK: return "BACK";
+	case VK_TAB: return "TAB";
+	case VK_CLEAR: return "CLEAR";
+	case VK_RETURN: return "ENTER";
+	case VK_SHIFT: return "SHIFT";
+	case VK_CONTROL: return "CONTROL";
+	case VK_MENU: return "ALT";
+	case VK_CAPITAL: return "CAP LOCK";
+	case VK_KANA: return "IME Kana";
+	//case VK_HANGUEL: return "IME Hnaguel";
+	//case VK_HANGUL: return "IME Hangul";
+	//case VK_IME_ON: return "IME On";
+	case VK_JUNJA: return "IME JUNA";
+	case VK_FINAL: return "IME FINAL";
+	case VK_HANJA: return "IME HANJA";
+	//case VK_KANJI: return "IME Kanji";
+	//case VK_IME_OFF: return "IME Off";
+	case VK_ESCAPE: return "ESC";
+	case VK_CONVERT: return "IME CONVERT";
+	case VK_NONCONVERT: return "IME NONCONVERT";
+	case VK_ACCEPT: return "IME ACCEPT";
+	case VK_MODECHANGE: return "IME CHANGE MODE";
+	case VK_SPACE: return "SPACE";
+	case VK_PRIOR: return "PAGE UP";
+	case VK_NEXT: return "PAGE DOWN";
+	case VK_END: return "END";
+	case VK_HOME: return "HOME";
+	case VK_LEFT: return "LEFT ARROW";
+	case VK_UP: return "UP ARROW";
+	case VK_RIGHT: return "RIGHT ARROW";
+	case VK_DOWN: return "DOWN ARROW";
+	case VK_SELECT: return "SELECT";
+	case VK_PRINT: return "PRINT";
+	case VK_EXECUTE: return "EXECUTE";
+	case VK_SNAPSHOT: return "PRINT SCREEN";
+	case VK_INSERT: return "INSERT";
+	case VK_DELETE: return "DELETE";
+	case VK_HELP: return "HELP";
+	case 0x30: return "0";
+	case 0x31: return "1";
+	case 0x32: return "2";
+	case 0x33: return "3";
+	case 0x34: return "4";
+	case 0x35: return "5";
+	case 0x36: return "6";
+	case 0x37: return "7";
+	case 0x38: return "8";
+	case 0x39: return "9";
+	case 0x41: return "A";
+	case 0x42: return "B";
+	case 0x43: return "C";
+	case 0x44: return "D";
+	case 0x45: return "E";
+	case 0x46: return "F";
+	case 0x47: return "G";
+	case 0x48: return "H";
+	case 0x49: return "I";
+	case 0x4A: return "J";
+	case 0x4B: return "K";
+	case 0x4C: return "L";
+	case 0x4D: return "M";
+	case 0x4E: return "N";
+	case 0x4F: return "O";
+	case 0x50: return "P";
+	case 0x51: return "Q";
+	case 0x52: return "R";
+	case 0x53: return "S";
+	case 0x54: return "T";
+	case 0x55: return "U";
+	case 0x56: return "V";
+	case 0x57: return "W";
+	case 0x58: return "X";
+	case 0x59: return "Y";
+	case 0x5A: return "Z";
+	case VK_LWIN: return "LEFT WINDOWS";
+	case VK_RWIN: return "RIGHT WINDOWS";
+	case VK_APPS: return "APPLICATION";
+	case VK_SLEEP: return "SLEEP";
+	case VK_NUMPAD0: return "NUMPAD 0";
+	case VK_NUMPAD1: return "NUMPAD 1";
+	case VK_NUMPAD2: return "NUMPAD 2";
+	case VK_NUMPAD3: return "NUMPAD 3";
+	case VK_NUMPAD4: return "NUMPAD 4";
+	case VK_NUMPAD5: return "NUMPAD 5";
+	case VK_NUMPAD6: return "NUMPAD 6";
+	case VK_NUMPAD7: return "NUMPAD 7";
+	case VK_NUMPAD8: return "NUMPAD 8";
+	case VK_NUMPAD9: return "NUMPAD 9";
+	case VK_MULTIPLY: return "MULTIPLY";
+	case VK_ADD: return "ADD";
+	case VK_SEPARATOR: return "SPERATOR";
+	case VK_SUBTRACT: return "SUBTRACT";
+	case VK_DECIMAL: return "DECIMAL";
+	case VK_DIVIDE: return "DIVIDE";
+	case VK_F1: return "F1";
+	case VK_F2: return "F2";
+	case VK_F3: return "F3";
+	case VK_F4: return "F4";
+	case VK_F5: return "F5";
+	case VK_F6: return "F6";
+	case VK_F7: return "F7";
+	case VK_F8: return "F8";
+	case VK_F9: return "F9";
+	case VK_F10: return "F10";
+	case VK_F11: return "F11";
+	case VK_F12: return "F12";
+	case VK_F13: return "F13";
+	case VK_F14: return "F14";
+	case VK_F15: return "F15";
+	case VK_F16: return "F16";
+	case VK_F17: return "F17";
+	case VK_F18: return "F18";
+	case VK_F19: return "F19";
+	case VK_F20: return "F20";
+	case VK_F21: return "F21";
+	case VK_F22: return "F22";
+	case VK_F23: return "F23";
+	case VK_F24: return "F24";
+	case VK_NUMLOCK: return "NUM LOCK";
+	case VK_SCROLL: return "SCROLL";
+	case 0x92: return "OEM KEY 1";
+	case 0x93: return "OEM KEY 2";
+	case 0x94: return "OEM KEY 3";
+	case 0x95: return "OEM KEY 4";
+	case 0x96: return "OEM KEY 5";
+	case VK_LSHIFT: return "LEFT SHIFT";
+	case VK_RSHIFT: return "RIGHT SHIFT";
+	case VK_LCONTROL: return "LEFT CONTROL";
+	case VK_RCONTROL: return "RIGHT CONTROL";
+	case VK_LMENU: return "LEFT MENU";
+	case VK_RMENU: return "RIGHT MENU";
+	case VK_BROWSER_BACK: return "BROWSER BACK";
+	case VK_BROWSER_FORWARD: return "BROWSER FORWARD";
+	case VK_BROWSER_REFRESH: return "BROWSER REFRESH";
+	case VK_BROWSER_STOP: return "BROWSER STOP";
+	case VK_BROWSER_SEARCH: return "BROWSER SEARCH";
+	case VK_BROWSER_FAVORITES: return "BROWSER FAVORITES";
+	case VK_BROWSER_HOME: return "BROWSER HOME";
+	case VK_VOLUME_MUTE: return "VOLUME MUTE";
+	case VK_VOLUME_DOWN: return "VOLUME DOWN";
+	case VK_VOLUME_UP: return "VOLUME UP";
+	case VK_MEDIA_NEXT_TRACK: return "NEXT TRACK";
+	case VK_MEDIA_PREV_TRACK: return "PREVIOUS TRACK";
+	case VK_MEDIA_STOP: return "STOP MEDIA";
+	case VK_MEDIA_PLAY_PAUSE: return "PLAY/PAUSE MEDIA";
+	case VK_LAUNCH_MAIL: return "LAUNCH MAIL";
+	case VK_LAUNCH_MEDIA_SELECT: return "SELECT MEDIA";
+	case VK_LAUNCH_APP1: return "START APP 1";
+	case VK_LAUNCH_APP2: return "START APP 2";
+	case VK_OEM_1: return "MISC CHAR 1";
+	case VK_OEM_PLUS: return "PLUS";
+	case VK_OEM_COMMA: return "COMMA";
+	case VK_OEM_MINUS: return "MINUS";
+	case VK_OEM_PERIOD: return "PERIOD";
+	case VK_OEM_2: return "MISC CHAR 2";
+	case VK_OEM_3: return "MISC CHAR 3";
+	case VK_OEM_4: return "MISC CHAR 4";
+	case VK_OEM_5: return "MISC CHAR 5";
+	case VK_OEM_6: return "MISC CHAR 6";
+	case VK_OEM_7: return "MISC CHAR 7";
+	case VK_OEM_8: return "MISC CHAR 8";
+	case 0xE1: return "OEM KEY 6";
+	case VK_ATTN: return "ATTN KEY";
+	case VK_CRSEL: return "CRSEL KEY";
+	case VK_EXSEL: return "EXSEL KEY";
+	case VK_EREOF: return "ERASE EOF";
+	case VK_PLAY: return "PLAY";
+	case VK_ZOOM: return "ZOOM";
+	case VK_NONAME: return "NO NAME KEY";
+	case VK_PA1: return "PA1 KEY";
+	case VK_OEM_CLEAR: return "CLEAR KEY";
+	default: return "UNKNOWN";
+	}
+}
 
-		//out = ConvertVKey(input->ki.wVk);
-		out += MapVirtualKeyA(Server.inputBuff.ki.wVk, MAPVK_VK_TO_CHAR);
+void MainWindow::UpdateInput() {
+
+	std::string key_out("");
+	std::string mouse_out("");
+
+	if (Server.inputBuff.type == INPUT_KEYBOARD) {
+		key_out = VKeyToString(Server.inputBuff.ki.wVk);
+		//key_out += MapVirtualKeyA(Server.inputBuff.ki.wVk, MAPVK_VK_TO_CHAR);
 		if (Server.inputBuff.ki.dwFlags == KEYEVENTF_KEYUP) {
-			out = out + " UP";
+			key_out += " UP";
 		}
 		else {
-			out = out + " DOWN";
+			key_out += " DOWN";
 		}
 
-		SetWindowText(m_stxtKeyboard.Window(), out.c_str());
+		SetWindowText(m_stxtKeyboard.Window(), key_out.c_str());
 	}
 	else if (Server.inputBuff.type == INPUT_MOUSE) {
 		if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_LEFTDOWN) {
@@ -833,11 +1016,21 @@ void MainWindow::UpdateInput() {
 		else if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_RIGHTDOWN) {
 			SetWindowText(m_stxtMouseBtn.Window(), "Right Pressed");
 		}
+		else if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_MIDDLEDOWN) {
+			SetWindowText(m_stxtMouseBtn.Window(), "Middle Pressed");
+		}
 		else if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_LEFTUP) {
 			SetWindowText(m_stxtMouseBtn.Window(), "Left Released");
 		}
 		else if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_RIGHTUP) {
 			SetWindowText(m_stxtMouseBtn.Window(), "Right Released");
+		}
+		else if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_MIDDLEUP) {
+			SetWindowText(m_stxtMouseBtn.Window(), "Middle Released");
+		}
+		else if (Server.inputBuff.mi.dwFlags == MOUSEEVENTF_WHEEL) {
+			mouse_out = "Wheel delta=" + std::to_string((int16_t)Server.inputBuff.mi.mouseData);
+			SetWindowText(m_stxtMouseBtn.Window(), mouse_out.c_str());
 		}
 		else {
 			SetWindowText(m_stxtMouseBtn.Window(), "");
@@ -898,7 +1091,7 @@ void MainWindow::UpdateGuiControls()
 		//	Button_Enable(m_btnModeClient.Window(), true);
 		//}
 	}
-		break;
+	break;
 
 	case MODE::SERVER:
 	{
@@ -1115,14 +1308,14 @@ int MainWindow::ServerTerminate()
 		Server.isOnline = false;
 		Server.cond_listen.notify_all();
 		Server.cond_input.notify_all();
-		
+
 		//UpdateGuiControls();
 		Button_Enable(m_btnStart.Window(), true);
 		Button_Enable(m_btnTerminate.Window(), false);
 		Button_Enable(m_btnPause.Window(), false);
 		Button_Enable(m_btnModeServer.Window(), true);
 		Button_Enable(m_btnModeClient.Window(), true);
-		
+
 		return 0;
 	}
 	return 1;
@@ -1174,7 +1367,7 @@ int MainWindow::ClientDisconnect()
 	Client.isConnected = false;
 	Client.cond_input.notify_all();
 	Client.cond_recv.notify_all();
-	
+
 	//UpdateGuiControls();
 	Button_Enable(m_btnConnect.Window(), true);
 	Button_Enable(m_btnDisconnect.Window(), false);
