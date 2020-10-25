@@ -103,7 +103,6 @@ int InitializeServer(SOCKET& sktListen, int port) {
 	freeaddrinfo(result);
 	return 0;
 }
-
 int BroadcastInput(std::vector<SOCKET> vsktSend, INPUT* input) {
 	int iResult = 0;
 
@@ -118,7 +117,6 @@ int BroadcastInput(std::vector<SOCKET> vsktSend, INPUT* input) {
 	}
 	return 0;
 }
-
 int TerminateServer(SOCKET& sktListen, std::vector<SOCKET>& sktClients) {
 
 	int iResult;
@@ -132,10 +130,9 @@ int TerminateServer(SOCKET& sktListen, std::vector<SOCKET>& sktClients) {
 		}
 	}
 	closesocket(sktListen);
-	WSACleanup();
+	//WSACleanup();
 	return 0;
 }
-
 int InitializeClient() {
 	//WSADATA wsaData;
 	//int iResult;
@@ -148,7 +145,6 @@ int InitializeClient() {
 	//}
 	return 0;
 }
-
 int ConnectServer(SOCKET& sktConn, std::string serverAdd, int port) {
 	int iResult;
 	struct addrinfo* result = NULL,
@@ -191,7 +187,6 @@ int ConnectServer(SOCKET& sktConn, std::string serverAdd, int port) {
 	}
 	return 0;
 }
-
 int ReceiveServer(SOCKET sktConn, INPUT& data) {
 	INPUT* buff = new INPUT;
 	//std::cout << "receiving..." << std::endl;
@@ -208,12 +203,12 @@ int ReceiveServer(SOCKET sktConn, INPUT& data) {
 	else if (iResult < sizeof(INPUT))
 	{
 		int bytes_rec = iResult;
-		int count = 0;
+		//int count = 0;
 		while (bytes_rec < sizeof(INPUT))
 		{
-			std::cout << "Received partial input: " << count << " - " << bytes_rec << " bytes of " << sizeof(INPUT) << std::endl;
+			//std::cout << "Received partial input: " << count << " - " << bytes_rec << " bytes of " << sizeof(INPUT) << std::endl;
 			bytes_rec += recv(sktConn, (char*)buff + bytes_rec, sizeof(INPUT) - bytes_rec, 0);
-			count++;
+			//count++;
 		}
 	}
 	else {
@@ -225,13 +220,11 @@ int ReceiveServer(SOCKET sktConn, INPUT& data) {
 	delete buff;
 	return 0;
 }
-
 int CloseConnection(SOCKET* sktConn) {
 	closesocket(*sktConn);
-	WSACleanup();
+	//WSACleanup();
 	return 0;
 }
-
 
 // BaseWindow was taken from
 // https://github.com/microsoft/Windows-classic-samples/blob/master/Samples/Win7Samples/begin/LearnWin32/BaseWindow/cpp/main.cpp
@@ -570,7 +563,7 @@ int MainWindow::RetrieveInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// the mouse cursor reaches the right edge of the screen
 		// at which point, the cursor on the server computer becomes "frozen" until 
 		// the cursor on the other computer reaches the left side of its screen
-		if (Server.inputBuff.type == 0 && !Server.bOnOtherScreen)
+		if (Server.inputBuff.type == 0 && !Server.bOnOtherScreen && Server.nConnected > 0)
 		{
 			if (!GetCursorPos(&Server.mPos))
 			{
@@ -590,21 +583,17 @@ int MainWindow::RetrieveInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
-		else if (Server.bOnOtherScreen)
+		else if (Server.bOnOtherScreen && Server.nConnected > 0)
 		{
 			short newOffsetX = Server.nOffsetX + Server.inputBuff.mi.dx;
-			if (Server.nOffsetX > 12000)
-			{
-				Log("WARNING: massive jump in offsetX");
-				Server.nOffsetX = 12000;
-			}
-			else
-			{
-				Server.nOffsetX += Server.inputBuff.mi.dx;
-			}
+
+			Server.nOffsetX += Server.inputBuff.mi.dx;
+
+			if (Server.nOffsetX > nScreenHeight[1]) Server.nOffsetX = nScreenHeight[1];
+
 			//d.nOffsetY += Server.inputBuff.mi.dy;
 			GetCursorPos(&Server.mPos);
-			SetCursorPos(nScreenWidth[0] - 10, Server.mPos.y);
+			SetCursorPos(nScreenWidth[0] - 2, Server.mPos.y);
 
 			if (Server.nOffsetX < 0)
 			{
@@ -613,10 +602,15 @@ int MainWindow::RetrieveInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 		}
+		else if (Server.nConnected <= 0 && Server.bOnOtherScreen)
+		{
+			Server.nOffsetX = -1;
+			Server.bOnOtherScreen = false;
+		}
 		if (!Server.bPause)
 		{
-			std::unique_lock<std::mutex> lock(Server.mu_input);
-			Server.inputQueue.emplace(Server.inputBuff);
+			//std::unique_lock<std::mutex> lock(Server.mu_input);
+			Server.inputQueue.push(Server.inputBuff);
 			Server.cond_input.notify_all();
 		}
 
@@ -1305,6 +1299,7 @@ int MainWindow::ServerTerminate()
 			skt_clients.push_back(skt.socket);
 		}
 		TerminateServer(Server.sktListen, skt_clients);
+		Server.nConnected = 0;
 		Server.isOnline = false;
 		Server.cond_listen.notify_all();
 		Server.cond_input.notify_all();
@@ -1332,7 +1327,7 @@ int MainWindow::ClientConnect()
 	sPort = out_port;
 	SaveConfig();
 	//Log("Initializing client ");
-	//InitializeClient();
+	InitializeClient();
 	Log("Connecting to server: " + Client.ip + ":" + sPort);
 	error = ConnectServer(Client.sktServer, Client.ip, std::stoi(sPort));
 	if (error == 1) {
@@ -1412,7 +1407,7 @@ int MainWindow::ListenThread()
 		else
 		{
 			Log("Connection accepted");
-
+			Server.nConnected++;
 			socket_found = false;
 		}
 		delete inc_conn;
@@ -1442,7 +1437,7 @@ int MainWindow::SendThread()
 					//std::cout << "Sending..." << std::endl;
 					bytes = send(client.socket, (char*)&inputData, sizeof(INPUT), 0);
 
-					if (bytes == 0)
+					if (bytes < 0)
 					{
 						// client disconnected
 						Log("Client nb " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
@@ -1504,6 +1499,10 @@ int MainWindow::OutputThread()
 			}
 			lock.unlock();
 			UpdateInput();
+			if (tInputs->mi.mouseData != 0)
+			{
+				tInputs->mi.mouseData = (int16_t)tInputs->mi.mouseData;
+			}
 			//std::cout << "sending input" << std::endl;
 			SendInput(sz, tInputs, sizeof(INPUT));
 			delete[] tInputs;
