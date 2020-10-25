@@ -493,7 +493,7 @@ MainWindow::MainWindow()
 		hostent* host;
 		host = gethostbyname("");
 		char* wifiIP;
-		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[0]);
+		wifiIP = inet_ntoa(*(in_addr*)host->h_addr_list[1]);
 		Server.ip = std::string(wifiIP);
 	}
 	nScreenWidth[0] = GetSystemMetrics(SM_CXSCREEN);
@@ -752,6 +752,9 @@ int MainWindow::HandleClose(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case MODE::CLIENT:
+		char out_ip[50];
+		GetWindowText(m_itxtIP.Window(), out_ip, 50);
+		Client.ip = out_ip;
 		if (Client.isConnected)
 		{
 			ClientDisconnect();
@@ -915,6 +918,9 @@ void MainWindow::UpdateGuiControls()
 
 			SetRect(&Data.textRect, 20, 120, 129, 170);
 			InvalidateRect(m_hwnd, &Data.textRect, true);
+			char out_ip[50];
+			GetWindowText(m_itxtIP.Window(), out_ip, 50);
+			Client.ip = out_ip;
 
 			PostMessage(m_itxtIP.Window(), EM_SETREADONLY, (WPARAM)true, 0);
 			SetWindowText(m_itxtIP.Window(), Server.ip.c_str());
@@ -1244,7 +1250,7 @@ int MainWindow::SendThread()
 					if (bytes == 0)
 					{
 						// client disconnected
-						Log("Client " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
+						Log("Client nb " + std::to_string(client.id) + " disconnected: " + std::to_string(client.socket) + "\nIP: " + client.ip);
 						Server.nConnected--;
 						closesocket(client.socket);
 						client.socket = INVALID_SOCKET;
